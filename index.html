@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portland Water Meter Account Update</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="header-logo">
+                        <img src="https://www.portlandtx.com/ImageRepository/Document?documentId=4486" alt="City of Portland TX" class="logo" />
+                    </div>
+                    <div class="header-text">
+                        <h1 class="app-title">Portland Water Meter Account Update</h1>
+                        <p class="app-description">Search and update water meter account information</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            <div class="container">
+                <!-- Search Section -->
+                <div class="search-section">
+                    <div class="search-container">
+                        <label for="searchInput" class="form-label">Search by Address or Account Number</label>
+                        <div class="search-input-container">
+                            <input 
+                                type="text" 
+                                id="searchInput" 
+                                class="form-control search-input"
+                                placeholder="Enter address or account number..."
+                                autocomplete="off"
+                            />
+                            <button id="clearSearch" class="btn btn--secondary btn--sm clear-btn" type="button" title="Clear search">
+                                ×
+                            </button>
+                        </div>
+                        <div id="searchResults" class="search-results hidden"></div>
+                        <div class="search-actions">
+                            <button id="searchBtn" class="btn btn--primary">Search</button>
+                            <button id="resetMapBtn" class="btn btn--outline">Reset Map</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Map and Legend Container -->
+                <div class="map-legend-container">
+                    <!-- Map Section -->
+                    <div class="map-section">
+                        <div id="mapView" class="map-container"></div>
+                        
+                        <!-- Loading Indicator -->
+                        <div id="loadingIndicator" class="loading-indicator hidden">
+                            <div class="loading-spinner"></div>
+                            <p>Loading...</p>
+                        </div>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="legend">
+                        <h3>Legend</h3>
+                        <div class="legend-items">
+                            <div class="legend-item">
+                                <span class="legend-symbol default"></span>
+                                <span>Standard Meter (No Account Update)</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-symbol updated"></span>
+                                <span>Updated Meter (Has Account Update)</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-symbol selected"></span>
+                                <span>Selected Meter</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Status Messages -->
+        <div id="statusContainer" class="status-container"></div>
+
+        <!-- Meter Edit Modal -->
+        <div id="editModal" class="modal hidden">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Edit Meter Information</h2>
+                    <button id="closeModal" class="btn btn--outline btn--sm">×</button>
+                </div>
+                <div class="modal-body">
+                    <!-- Display Fields (Read-only) -->
+                    <div class="display-fields">
+                        <div class="form-group">
+                            <label class="form-label">Address</label>
+                            <input id="addressField" type="text" class="form-control display-field" readonly />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Account Number</label>
+                            <input id="accountField" type="text" class="form-control display-field" readonly />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Customer</label>
+                            <input id="customerField" type="text" class="form-control display-field" readonly />
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Class</label>
+                                <input id="classField" type="text" class="form-control display-field" readonly />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Type</label>
+                                <input id="typeField" type="text" class="form-control display-field" readonly />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Editable Field -->
+                    <div class="editable-fields">
+                        <div class="form-group">
+                            <label for="accountUpdateField" class="form-label">Account Update</label>
+                            <textarea 
+                                id="accountUpdateField" 
+                                class="form-control" 
+                                rows="4"
+                                placeholder="Enter account update information..."
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Information Fields -->
+                    <div class="info-fields">
+                        <h4>Edit History</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Last Edit Date</label>
+                                <input id="editDateField" type="text" class="form-control info-field" readonly />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Last Editor</label>
+                                <input id="editorField" type="text" class="form-control info-field" readonly />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveBtn" class="btn btn--primary">Save Changes</button>
+                    <button id="cancelBtn" class="btn btn--secondary">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Panel -->
+        <div class="help-panel">
+            <button id="helpBtn" class="btn btn--outline btn--sm" title="Help">?</button>
+            <div id="helpContent" class="help-content hidden">
+                <h3>How to Use</h3>
+                <ol>
+                    <li>Search by address or account number in the search box</li>
+                    <li>Click on a meter from search results or directly on the map</li>
+                    <li>Review meter details in the edit form</li>
+                    <li>Update the Account Update field as needed</li>
+                    <li>Click Save to commit your changes</li>
+                    <li>Map symbols will update to reflect changes</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://js.arcgis.com/4.28/"></script>
+    <script src="app.js"></script>
+</body>
+</html>
