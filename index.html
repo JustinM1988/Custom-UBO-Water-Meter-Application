@@ -3,26 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portland Water Meter Management System - DEBUG</title>
+    <title>Portland Water Meter Management System</title>
     <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Debug console overlay */
+        /* Debug console - hidden by default */
         #debugConsole {
             position: fixed;
-            top: 10px;
+            top: 60px;
             right: 10px;
             width: 400px;
             max-height: 300px;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95);
             color: #00ff00;
             font-family: monospace;
-            font-size: 12px;
+            font-size: 11px;
             padding: 10px;
             border-radius: 5px;
             overflow-y: auto;
             z-index: 10000;
             border: 2px solid #00ff00;
+            display: none;
+        }
+        #debugToggle {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #333;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 10001;
+            font-size: 12px;
+        }
+        #debugToggle:hover {
+            background: #555;
         }
         .debug-error { color: #ff4444; }
         .debug-success { color: #44ff44; }
@@ -31,6 +48,9 @@
     </style>
 </head>
 <body>
+    <!-- Debug Toggle Button -->
+    <button id="debugToggle" onclick="toggleDebug()">Show Debug</button>
+    
     <!-- Debug Console -->
     <div id="debugConsole">
         <div><strong>DEBUG CONSOLE</strong></div>
@@ -46,7 +66,7 @@
                      class="city-logo-clean">
                 <div class="header-text">
                     <h1 class="app-title">Portland Water Meter Management System</h1>
-                    <p class="app-subtitle">Municipal Utility Account Updates - DEBUG MODE</p>
+                    <p class="app-subtitle">Municipal Utility Account Updates</p>
                 </div>
             </div>
             <div class="header-stats">
@@ -110,29 +130,41 @@
     </div>
 
     <script>
-        // Debug logging function
-        function debugLog(message, type = 'info') {
-            const debugDiv = document.getElementById('debugLog');
-            const timestamp = new Date().toLocaleTimeString();
-            const logEntry = document.createElement('div');
-            logEntry.className = `debug-${type}`;
-            logEntry.innerHTML = `[${timestamp}] ${message}`;
-            debugDiv.appendChild(logEntry);
-            debugDiv.scrollTop = debugDiv.scrollHeight;
-            console.log(`[${type.toUpperCase()}] ${message}`);
+        // Debug toggle function
+        let debugVisible = false;
+        function toggleDebug() {
+            const console = document.getElementById('debugConsole');
+            const button = document.getElementById('debugToggle');
+            debugVisible = !debugVisible;
+            console.style.display = debugVisible ? 'block' : 'none';
+            button.textContent = debugVisible ? 'Hide Debug' : 'Show Debug';
         }
 
-        // Test basic functionality first
+        // Debug logging function
+        function debugLog(message, type = 'info') {
+            try {
+                const debugDiv = document.getElementById('debugLog');
+                if (debugDiv) {
+                    const timestamp = new Date().toLocaleTimeString();
+                    const logEntry = document.createElement('div');
+                    logEntry.className = `debug-${type}`;
+                    logEntry.innerHTML = `[${timestamp}] ${message}`;
+                    debugDiv.appendChild(logEntry);
+                    debugDiv.scrollTop = debugDiv.scrollHeight;
+                }
+                console.log(`[${type.toUpperCase()}] ${message}`);
+            } catch (e) {
+                console.error('Debug logging failed:', e);
+            }
+        }
+
         debugLog('Starting application...', 'info');
         debugLog('DOM loaded successfully', 'success');
-        
-        // Test if ArcGIS JS API loads
         debugLog('Loading ArcGIS JavaScript API...', 'info');
     </script>
     
     <script src="https://js.arcgis.com/4.28/"></script>
     <script>
-        // Check if ArcGIS loaded
         if (typeof require === 'function') {
             debugLog('ArcGIS JavaScript API loaded successfully!', 'success');
         } else {
