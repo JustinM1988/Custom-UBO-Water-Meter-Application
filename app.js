@@ -1,188 +1,127 @@
-debugLog('All ArcGIS modules loaded successfully!', 'success');
+debugLog('app.js file loaded', 'success');
 
-const config = {
-    serviceUrl: "https://services3.arcgis.com/DAf01WuIltSLujAv/arcgis/rest/services/Portland_Meters/FeatureServer/0",
-    fieldNames: {
-        address: "address",
-        account: "Account", 
-        customer: "Customer",
-        customerAccount: "customer_account_number",
-        accountUpdate: "Account_Update",
-        editDate: "EditDate",
-        editor: "Editor",
-        class: "Class",
-        type: "Type"
-    },
-    colors: {
-        needsUpdate: "#2247fe",
-        updated: "#80c940", 
-        selected: "#fb7f31"
-    }
-};
-
-debugLog(`Service URL: ${config.serviceUrl}`, 'info');
-
-let map, view, featureLayer, selectedFeature, allFeatures = [];
-let highlightGraphic = null;
-
-debugLog('Starting initialization...', 'info');
-init();
-
-async function init() {
-    try {
-        debugLog('Init function called', 'info');
-        showLoading(true);
-        
-        debugLog('Step 1: Initializing map...', 'info');
-        await initMap();
-        debugLog('Step 1: Map initialized successfully', 'success');
-        
-        debugLog('Step 2: Loading ALL features (no limit)...', 'info');
-        await loadAllFeatures();
-        debugLog('Step 2: Features loaded successfully', 'success');
-        
-        debugLog('Step 3: Initializing search...', 'info');
-        initSearch();
-        debugLog('Step 3: Search initialized successfully', 'success');
-        
-        debugLog('Step 4: Initializing event listeners...', 'info');
-        initEventListeners();
-        debugLog('Step 4: Event listeners initialized successfully', 'success');
-        
-        debugLog('Step 5: Updating statistics...', 'info');
-        updateStats();
-        debugLog('Step 5: Statistics updated successfully', 'success');
-        
-        showLoading(false);
-        debugLog('APPLICATION INITIALIZED SUCCESSFULLY!', 'success');
-        
-    } catch (error) {
-        debugLog(`INITIALIZATION ERROR: ${error.message}`, 'error');
-        debugLog(`Error stack: ${error.stack}`, 'error');
-        showToast("Failed to initialize application: " + error.message, "error");
-        showLoading(false);
-    }
+if (typeof require === 'undefined') {
+    debugLog('ERROR: require function not found - ArcGIS API not loaded properly', 'error');
+} else {
+    debugLog('require function found - attempting to load modules', 'info');
 }
 
-async function initMap() {
-    try {
-        debugLog('Creating map object...', 'info');
-        
-        const viewDiv = document.getElementById('viewDiv');
-        if (!viewDiv) {
-            throw new Error('viewDiv element not found in DOM');
+require([
+    "esri/Map",
+    "esri/views/MapView",
+    "esri/layers/FeatureLayer",
+    "esri/widgets/Legend",
+    "esri/widgets/Expand",
+    "esri/renderers/UniqueValueRenderer",
+    "esri/symbols/SimpleMarkerSymbol",
+    "esri/Graphic",
+    "esri/geometry/Point"
+], function(Map, MapView, FeatureLayer, Legend, Expand, UniqueValueRenderer, SimpleMarkerSymbol, Graphic, Point) {
+
+    debugLog('All ArcGIS modules loaded successfully!', 'success');
+
+    const config = {
+        serviceUrl: "https://services3.arcgis.com/DAf01WuIltSLujAv/arcgis/rest/services/Portland_Meters/FeatureServer/0",
+        fieldNames: {
+            address: "address",
+            account: "Account",
+            customer: "Customer",
+            customerAccount: "customer_account_number",
+            accountUpdate: "Account_Update",
+            editDate: "EditDate",
+            editor: "Editor",
+            class: "Class",
+            type: "Type"
+        },
+        colors: {
+            needsUpdate: "#2247fe", // blue
+            updated: "#80c940",     // green
+            selected: "#fb7f31"     // orange
         }
-        debugLog('viewDiv element found', 'success');
+    };
 
-        map = new Map({
-            basemap: "streets-navigation-vector"
-        });
-        debugLog('Map object created', 'success');
+    debugLog(`Service URL: ${config.serviceUrl}`, 'info');
 
-        debugLog('Creating MapView...', 'info');
-        view = new MapView({
-            container: "viewDiv",
-            map: map,
-            center: [-97.3238, 27.8772],
-            zoom: 13
-        });
-        debugLog('MapView object created', 'success');
+    let map, view, featureLayer, selectedFeature, highlightGraphic = null;
 
-        debugLog(`Testing feature layer URL: ${config.serviceUrl}`, 'info');
-        
-        // Create proper renderer for symbology
-        const renderer = createSymbologyRenderer();
-        debugLog('Renderer created: Blue for empty Account_Update, Green for filled', 'success');
+    debugLog('Starting initialization...', 'info');
+    init();
 
-        featureLayer = new FeatureLayer({
-            url: config.serviceUrl,
-            renderer: renderer,
-            popupEnabled: false,
-            outFields: ["*"]
-        });
-        debugLog('FeatureLayer object created', 'success');
-
-        map.add(featureLayer);
-        debugLog('FeatureLayer added to map', 'success');
-
-        // Add legend
-        debugLog('Creating legend...', 'info');
-        const legend = new Legend({
-            view: view,
-            style: { type: "card", layout: "side-by-side" }
-        });
-
-        const legendExpand = new Expand({
-            view: view,
-            content: legend,
-            expanded: false,
-            expandIconClass: "esri-icon-layer-list"
-        });
-
-        view.ui.add(legendExpand, "top-right");
-        debugLog('Legend added', 'success');
-
-        view.on("click", handleMapClick);
-        debugLog('Click handler added', 'success');
-
-        debugLog('Waiting for view to load...', 'info');
-        await view.when();
-        debugLog('View loaded successfully!', 'success');
-
-    } catch (error) {
-        debugLog(`MAP INITIALIZATION ERROR: ${error.message}`, 'error');
-        throw error;
+    async function init() {
+        try {
+            showLoading(true);
+            await initMap();
+            await loadAllFeatures();
+            initSearch();
+            initEventListeners();
+            updateStats();
+            showLoading(false);
+            debugLog('APPLICATION INITIALIZED SUCCESSFULLY!', 'success');
+        } catch (error) {
+            debugLog(`INITIALIZATION ERROR: ${error.message}`, 'error');
+            debugLog(`Error stack: ${error.stack}`, 'error');
+            showToast("Failed to initialize application: " + error.message, "error");
+            showLoading(false);
+        }
     }
-}
 
-function createSymbologyRenderer() {
-    debugLog('Creating symbology renderer with proper blue/green logic...', 'info');
-    return new UniqueValueRenderer({
-        field: config.fieldNames.accountUpdate, // "Account_Update"
-        defaultSymbol: new SimpleMarkerSymbol({
-            color: config.colors.needsUpdate, // Blue for empty/null
-            size: 10,
-            outline: { color: "white", width: 2 }
-        }),
-        uniqueValueInfos: [
-            {
-                value: null,
-                symbol: new SimpleMarkerSymbol({
-                    color: config.colors.needsUpdate, // Blue
-                    size: 10,
-                    outline: { color: "white", width: 2 }
-                }),
-                label: "Needs Update"
-            },
-            {
-                value: "",
-                symbol: new SimpleMarkerSymbol({
-                    color: config.colors.needsUpdate, // Blue
-                    size: 10,
-                    outline: { color: "white", width: 2 }
-                }),
-                label: "Needs Update"
-            },
-            {
-                value: " ",
-                symbol: new SimpleMarkerSymbol({
-                    color: config.colors.needsUpdate, // Blue
-                    size: 10,
-                    outline: { color: "white", width: 2 }
-                }),
-                label: "Needs Update"
-            }
-        ]
-    });
-}
+    async function initMap() {
+        try {
+            const viewDiv = document.getElementById('viewDiv');
+            if (!viewDiv) throw new Error('viewDiv element not found in DOM');
+            map = new Map({ basemap: "streets-navigation-vector" });
+            view = new MapView({
+                container: "viewDiv",
+                map: map,
+                center: [-97.3238, 27.8772],
+                zoom: 13
+            });
 
-async function loadAllFeatures() {
-    try {
-        debugLog('Creating query to load ALL features...', 'info');
+            featureLayer = new FeatureLayer({
+                url: config.serviceUrl,
+                renderer: createSymbologyRenderer(),
+                popupEnabled: false,
+                outFields: ["*"]
+            });
+
+            map.add(featureLayer);
+
+            const legend = new Legend({ view: view, style: { type: "card", layout: "side-by-side" } });
+            const legendExpand = new Expand({
+                view: view,
+                content: legend,
+                expanded: false,
+                expandIconClass: "esri-icon-layer-list"
+            });
+            view.ui.add(legendExpand, "top-right");
+            view.on("click", handleMapClick);
+            await view.when();
+        } catch (error) {
+            debugLog(`MAP INITIALIZATION ERROR: ${error.message}`, 'error');
+            throw error;
+        }
+    }
+
+    function createSymbologyRenderer() {
+        debugLog('Creating symbology renderer (blue+green)...', 'info');
+        return new UniqueValueRenderer({
+            field: config.fieldNames.accountUpdate,
+            defaultSymbol: new SimpleMarkerSymbol({
+                color: config.colors.needsUpdate,
+                size: 10,
+                outline: { color: "white", width: 2 }
+            }),
+            uniqueValueInfos: [
+                { value: null, symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 10, outline: { color: "white", width: 2 } }), label: "Needs Update" },
+                { value: "",   symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 10, outline: { color: "white", width: 2 } }), label: "Needs Update" },
+                { value: " ",  symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 10, outline: { color: "white", width: 2 } }), label: "Needs Update" }
+            ]
+        });
+    }
+
+    async function loadAllFeatures() {
         let features = [];
-        let offset = 0;
-        const batchSize = 1000;
-        let hasMoreResults = true;
+        let offset = 0, batchSize = 1000, hasMoreResults = true;
         while (hasMoreResults) {
             const query = featureLayer.createQuery();
             query.where = "1=1";
@@ -192,107 +131,55 @@ async function loadAllFeatures() {
             query.num = batchSize;
             debugLog(`Fetching batch starting at ${offset}...`, 'info');
             const results = await featureLayer.queryFeatures(query);
-            if (results.features.length === 0) {
-                hasMoreResults = false;
-            } else {
-                features = features.concat(results.features);
-                offset += batchSize;
-                if (results.features.length < batchSize) {
-                    hasMoreResults = false;
-                }
-            }
+            features = features.concat(results.features);
+            offset += batchSize;
+            hasMoreResults = results.features.length === batchSize;
         }
         window.allFeatures = features;
         debugLog(`Successfully loaded ${features.length} features (all meters!)`, 'success');
-        if (features.length === 0) {
-            debugLog('WARNING: No features returned from query', 'warning');
-        } else {
-            const firstFeature = features;
-            debugLog(`First feature attributes: ${JSON.stringify(Object.keys(firstFeature.attributes))}`, 'info');
-        }
         updateRendererWithData(features);
-    } catch (error) {
-        debugLog(`FEATURE LOADING ERROR: ${error.message}`, 'error');
-        throw error;
     }
-}
 
-function updateRendererWithData(features) {
-    try {
+    function updateRendererWithData(features) {
         debugLog('Updating renderer with blue/green symbology based on Account_Update...', 'info');
         const uniqueValueInfos = [
-            {
-                value: null,
-                symbol: new SimpleMarkerSymbol({
-                    color: config.colors.needsUpdate, // Blue
-                    size: 10,
-                    outline: { color: "white", width: 2 }
-                }),
-                label: "Needs Update"
-            },
-            {
-                value: "",
-                symbol: new SimpleMarkerSymbol({
-                    color: config.colors.needsUpdate, // Blue
-                    size: 10,
-                    outline: { color: "white", width: 2 }
-                }),
-                label: "Needs Update"
-            },
-            {
-                value: " ",
-                symbol: new SimpleMarkerSymbol({
-                    color: config.colors.needsUpdate, // Blue
-                    size: 10,
-                    outline: { color: "white", width: 2 }
-                }),
-                label: "Needs Update"
-            }
+            { value: null, symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 10, outline: { color: "white", width: 2 } }), label: "Needs Update" },
+            { value: "",   symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 10, outline: { color: "white", width: 2 } }), label: "Needs Update" },
+            { value: " ",  symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 10, outline: { color: "white", width: 2 } }), label: "Needs Update" }
         ];
-        // Find unique NON-EMPTY Account_Update values = GREEN (updated)
         const updatedValues = new Set();
-        features.forEach(feature => {
-            const value = feature.attributes[config.fieldNames.accountUpdate];
-            if (value && value.toString().trim() !== "") {
-                updatedValues.add(value);
-            }
+        features.forEach(f => {
+            const value = f.attributes[config.fieldNames.accountUpdate];
+            if (value && value.toString().trim() !== "") updatedValues.add(value);
         });
-        debugLog(`Found ${updatedValues.size} unique updated values - these will be GREEN`, 'info');
         updatedValues.forEach(value => {
             uniqueValueInfos.push({
                 value: value,
                 symbol: new SimpleMarkerSymbol({
-                    color: config.colors.updated, // Green
+                    color: config.colors.updated,
                     size: 10,
                     outline: { color: "white", width: 2 }
                 }),
                 label: "Updated"
             });
         });
-        const newRenderer = new UniqueValueRenderer({
-            field: config.fieldNames.accountUpdate, // "Account_Update"
+        featureLayer.renderer = new UniqueValueRenderer({
+            field: config.fieldNames.accountUpdate,
             defaultSymbol: new SimpleMarkerSymbol({
-                color: config.colors.needsUpdate, // Blue for anything else
+                color: config.colors.needsUpdate,
                 size: 10,
                 outline: { color: "white", width: 2 }
             }),
             uniqueValueInfos: uniqueValueInfos
         });
-        featureLayer.renderer = newRenderer;
         debugLog('Renderer updated: Blue for empty Account_Update, Green for filled!', 'success');
-    } catch (error) {
-        debugLog(`RENDERER UPDATE ERROR: ${error.message}`, 'error');
     }
-}
 
-function initSearch() {
-    try {
+    function initSearch() {
         debugLog('Initializing search...', 'info');
         const searchInput = document.getElementById('searchInput');
         const searchResults = document.getElementById('searchResults');
-        if (!searchInput || !searchResults) {
-            throw new Error('Search elements not found in DOM');
-        }
+        if (!searchInput || !searchResults) throw new Error('Search elements not found in DOM');
         let searchTimeout;
         searchInput.addEventListener('input', (e) => {
             clearTimeout(searchTimeout);
@@ -311,14 +198,9 @@ function initSearch() {
             searchResults.innerHTML = '';
             searchResults.classList.add('hidden');
         });
-        debugLog('Search initialized successfully', 'success');
-    } catch (error) {
-        debugLog(`SEARCH INITIALIZATION ERROR: ${error.message}`, 'error');
     }
-}
 
-function performSearch(query) {
-    try {
+    function performSearch(query) {
         debugLog(`Performing search for: "${query}"`, 'info');
         const searchResults = document.getElementById('searchResults');
         if (!window.allFeatures || !window.allFeatures.length) {
@@ -334,7 +216,6 @@ function performSearch(query) {
                 (account && account.toLowerCase().includes(query.toLowerCase()))
             );
         }).slice(0, 10);
-        debugLog(`Search returned ${results.length} results`, 'info');
         if (results.length === 0) {
             searchResults.innerHTML = '<div class="search-result-item no-results">No meters found</div>';
         } else {
@@ -360,17 +241,13 @@ function performSearch(query) {
             });
         }
         searchResults.classList.remove('hidden');
-    } catch (error) {
-        debugLog(`SEARCH ERROR: ${error.message}`, 'error');
     }
-}
 
-async function handleMapClick(event) {
-    try {
+    async function handleMapClick(event) {
         debugLog('Map clicked', 'info');
         const response = await view.hitTest(event);
         if (response.results.length > 0) {
-            const graphic = response.results.find(result => 
+            const graphic = response.results.find(result =>
                 result.graphic && result.graphic.layer === featureLayer
             );
             if (graphic) {
@@ -378,32 +255,23 @@ async function handleMapClick(event) {
                 selectMeter(graphic.graphic);
             }
         }
-    } catch (error) {
-        debugLog(`MAP CLICK ERROR: ${error.message}`, 'error');
     }
-}
 
-function selectMeterByObjectId(objectId) {
-    debugLog(`Selecting meter by ObjectID: ${objectId}`, 'info');
-    const feature = window.allFeatures.find(f => f.attributes.OBJECTID === objectId);
-    if (feature) {
-        selectMeter(feature);
-        view.goTo({
-            target: feature.geometry,
-            zoom: 18
-        });
-    } else {
-        debugLog(`Feature with ObjectID ${objectId} not found`, 'warning');
+    function selectMeterByObjectId(objectId) {
+        debugLog(`Selecting meter by ObjectID: ${objectId}`, 'info');
+        const feature = window.allFeatures.find(f => f.attributes.OBJECTID === objectId);
+        if (feature) {
+            selectMeter(feature);
+            view.goTo({ target: feature.geometry, zoom: 18 });
+        } else {
+            debugLog(`Feature with ObjectID ${objectId} not found`, 'warning');
+        }
     }
-}
 
-function selectMeter(feature) {
-    try {
+    function selectMeter(feature) {
         debugLog('Selecting meter', 'info');
         selectedFeature = feature;
-        if (highlightGraphic) {
-            view.graphics.remove(highlightGraphic);
-        }
+        if (highlightGraphic) view.graphics.remove(highlightGraphic);
         highlightGraphic = new Graphic({
             geometry: feature.geometry,
             symbol: new SimpleMarkerSymbol({
@@ -415,13 +283,9 @@ function selectMeter(feature) {
         view.graphics.add(highlightGraphic);
         showMeterDetails(feature);
         debugLog('Meter selected successfully', 'success');
-    } catch (error) {
-        debugLog(`METER SELECTION ERROR: ${error.message}`, 'error');
     }
-}
 
-function showMeterDetails(feature) {
-    try {
+    function showMeterDetails(feature) {
         debugLog('Showing meter details', 'info');
         const panel = document.getElementById('detailsPanel');
         const content = document.getElementById('detailsContent');
@@ -458,10 +322,10 @@ function showMeterDetails(feature) {
                 <div class="detail-group">
                     <div class="detail-item">
                         <label for="accountUpdateInput">Account Update:</label>
-                        <input type="text" 
-                               id="accountUpdateInput" 
-                               class="detail-input" 
-                               value="${attrs[config.fieldNames.accountUpdate] || ''}" 
+                        <input type="text"
+                               id="accountUpdateInput"
+                               class="detail-input"
+                               value="${attrs[config.fieldNames.accountUpdate] || ''}"
                                placeholder="Enter account update information">
                     </div>
                     <div class="edit-actions">
@@ -476,51 +340,33 @@ function showMeterDetails(feature) {
         document.getElementById('saveChanges').addEventListener('click', saveAccountUpdate);
         document.getElementById('cancelEdit').addEventListener('click', closeMeterDetails);
         debugLog('Meter details displayed', 'success');
-    } catch (error) {
-        debugLog(`SHOW DETAILS ERROR: ${error.message}`, 'error');
     }
-}
 
-async function saveAccountUpdate() {
-    try {
-        if (!selectedFeature) return;
-        debugLog('Saving account update...', 'info');
-        const input = document.getElementById('accountUpdateInput');
-        const newValue = input.value.trim();
-        showLoading(true, 'Saving changes...');
-        // Clone the feature for editing
-        const updatedFeature = selectedFeature.clone();
-        updatedFeature.attributes[config.fieldNames.accountUpdate] = newValue;
-        const edits = {
-            updateFeatures: [updatedFeature]
-        };
-        debugLog('Applying edits to feature layer...', 'info');
-        debugLog(`Updating OBJECTID ${updatedFeature.attributes.OBJECTID} with value: "${newValue}"`, 'info');
-        const result = await featureLayer.applyEdits(edits);
-        debugLog(`Edit result: ${JSON.stringify(result)}`, 'info');
-        if (result.updateFeatureResults && result.updateFeatureResults.length > 0) {
-            const updateResult = result.updateFeatureResults;
-            debugLog(`Update result success: ${updateResult.success}`, 'info');
-            debugLog(`Update result error: ${updateResult.error}`, 'info');
-            if (updateResult.success) {
-                debugLog('Save successful!', 'success');
-                showToast('Account update saved successfully! ✅', 'success');
-                const localFeature = window.allFeatures.find(f => 
-                    f.attributes.OBJECTID === selectedFeature.attributes.OBJECTID
-                );
-                if (localFeature) {
-                    localFeature.attributes[config.fieldNames.accountUpdate] = newValue;
-                }
-                selectedFeature.attributes[config.fieldNames.accountUpdate] = newValue;
-                updateRendererWithData(window.allFeatures);
-                updateStats();
-                closeMeterDetails();
-            } else {
-                // Even if error is null, it might still have worked
-                if (updateResult.error === null) {
-                    debugLog('Save returned null error but may have succeeded - treating as success', 'warning');
+    async function saveAccountUpdate() {
+        try {
+            if (!selectedFeature) return;
+            debugLog('Saving account update...', 'info');
+            const input = document.getElementById('accountUpdateInput');
+            const newValue = input.value.trim();
+            showLoading(true, 'Saving changes...');
+            // Clone the feature for editing
+            const updatedFeature = selectedFeature.clone();
+            updatedFeature.attributes[config.fieldNames.accountUpdate] = newValue;
+            const edits = {
+                updateFeatures: [updatedFeature]
+            };
+            debugLog('Applying edits to feature layer...', 'info');
+            debugLog(`Updating OBJECTID ${updatedFeature.attributes.OBJECTID} with value: "${newValue}"`, 'info');
+            const result = await featureLayer.applyEdits(edits);
+            debugLog(`Edit result: ${JSON.stringify(result)}`, 'info');
+            if (result.updateFeatureResults && result.updateFeatureResults.length > 0) {
+                const updateResult = result.updateFeatureResults[0];
+                debugLog(`Update result success: ${updateResult.success}`, 'info');
+                debugLog(`Update result error: ${updateResult.error}`, 'info');
+                if (updateResult.success) {
+                    debugLog('Save successful!', 'success');
                     showToast('Account update saved successfully! ✅', 'success');
-                    const localFeature = window.allFeatures.find(f => 
+                    const localFeature = window.allFeatures.find(f =>
                         f.attributes.OBJECTID === selectedFeature.attributes.OBJECTID
                     );
                     if (localFeature) {
@@ -531,56 +377,59 @@ async function saveAccountUpdate() {
                     updateStats();
                     closeMeterDetails();
                 } else {
-                    debugLog(`Save failed: ${updateResult.error}`, 'error');
-                    throw new Error(updateResult.error || 'Update failed');
+                    if (updateResult.error === null) {
+                        debugLog('Save returned null error but may have succeeded - treating as success', 'warning');
+                        showToast('Account update saved successfully! ✅', 'success');
+                        const localFeature = window.allFeatures.find(f =>
+                            f.attributes.OBJECTID === selectedFeature.attributes.OBJECTID
+                        );
+                        if (localFeature) {
+                            localFeature.attributes[config.fieldNames.accountUpdate] = newValue;
+                        }
+                        selectedFeature.attributes[config.fieldNames.accountUpdate] = newValue;
+                        updateRendererWithData(window.allFeatures);
+                        updateStats();
+                        closeMeterDetails();
+                    } else {
+                        debugLog(`Save failed: ${updateResult.error}`, 'error');
+                        throw new Error(updateResult.error || 'Update failed');
+                    }
                 }
+            } else {
+                debugLog('No update results returned', 'error');
+                throw new Error('No update results returned');
             }
-        } else {
-            debugLog('No update results returned', 'error');
-            throw new Error('No update results returned');
+        } catch (error) {
+            debugLog(`SAVE ERROR: ${error.message}`, 'error');
+            showToast('Failed to save changes. Please try again. ❌', 'error');
+        } finally {
+            showLoading(false);
         }
-    } catch (error) {
-        debugLog(`SAVE ERROR: ${error.message}`, 'error');
-        showToast('Failed to save changes. Please try again. ❌', 'error');
-    } finally {
-        showLoading(false);
     }
-}
 
-function closeMeterDetails() {
-    debugLog('Closing meter details', 'info');
-    const panel = document.getElementById('detailsPanel');
-    panel.classList.remove('visible');
-    if (highlightGraphic) {
-        view.graphics.remove(highlightGraphic);
+    function closeMeterDetails() {
+        debugLog('Closing meter details', 'info');
+        const panel = document.getElementById('detailsPanel');
+        panel.classList.remove('visible');
+        if (highlightGraphic) view.graphics.remove(highlightGraphic);
         highlightGraphic = null;
+        selectedFeature = null;
     }
-    selectedFeature = null;
-}
 
-function initEventListeners() {
-    try {
+    function initEventListeners() {
         debugLog('Initializing event listeners...', 'info');
         document.getElementById('closeDetails').addEventListener('click', closeMeterDetails);
         document.getElementById('resetView').addEventListener('click', () => {
-            view.goTo({
-                center: [-97.3238, 27.8772],
-                zoom: 13
-            });
+            view.goTo({ center: [-97.3238, 27.8772], zoom: 13 });
         });
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.search-container')) {
                 document.getElementById('searchResults').classList.add('hidden');
             }
         });
-        debugLog('Event listeners initialized', 'success');
-    } catch (error) {
-        debugLog(`EVENT LISTENERS ERROR: ${error.message}`, 'error');
     }
-}
 
-function updateStats() {
-    try {
+    function updateStats() {
         const totalCount = window.allFeatures ? window.allFeatures.length : 0;
         const updatedCount = window.allFeatures ? window.allFeatures.filter(feature => {
             const value = feature.attributes[config.fieldNames.accountUpdate];
@@ -589,13 +438,9 @@ function updateStats() {
         document.getElementById('totalMeters').textContent = totalCount.toLocaleString();
         document.getElementById('updatedMeters').textContent = updatedCount.toLocaleString();
         debugLog(`Stats updated: ${totalCount} total, ${updatedCount} updated`, 'success');
-    } catch (error) {
-        debugLog(`STATS UPDATE ERROR: ${error.message}`, 'error');
     }
-}
 
-function showLoading(show, message = 'Loading...') {
-    try {
+    function showLoading(show, message = 'Loading...') {
         const loading = document.getElementById('loadingIndicator');
         if (show) {
             loading.querySelector('.loading-text').textContent = message;
@@ -603,13 +448,9 @@ function showLoading(show, message = 'Loading...') {
         } else {
             loading.classList.add('hidden');
         }
-    } catch (error) {
-        debugLog(`LOADING INDICATOR ERROR: ${error.message}`, 'error');
     }
-}
 
-function showToast(message, type = 'info') {
-    try {
+    function showToast(message, type = 'info') {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.innerHTML = `
@@ -624,7 +465,10 @@ function showToast(message, type = 'info') {
             toast.classList.remove('show');
             setTimeout(() => document.body.removeChild(toast), 300);
         }, 4000);
-    } catch (error) {
-        debugLog(`TOAST ERROR: ${error.message}`, 'error');
     }
-}
+
+}, function(error) {
+    debugLog(`MODULE LOADING ERROR: ${error.message}`, 'error');
+    debugLog(`Failed modules: ${error.requireModules}`, 'error');
+    debugLog('Check if feature service URL is accessible', 'warning');
+});
