@@ -10,7 +10,7 @@
         /* Debug console - hidden by default */
         #debugConsole {
             position: fixed;
-            top: 60px;
+            top: 110px;
             right: 10px;
             width: 400px;
             max-height: 300px;
@@ -25,9 +25,8 @@
             border: 2px solid #00ff00;
             display: none;
         }
-        #debugToggle {
+        #debugToggle, #howToToggle {
             position: fixed;
-            top: 10px;
             right: 10px;
             background: #333;
             color: white;
@@ -38,23 +37,96 @@
             z-index: 10001;
             font-size: 12px;
         }
-        #debugToggle:hover {
+        #debugToggle {
+            top: 10px;
+        }
+        #howToToggle {
+            top: 50px;
+        }
+        #debugToggle:hover, #howToToggle:hover {
             background: #555;
         }
         .debug-error { color: #ff4444; }
         .debug-success { color: #44ff44; }
         .debug-info { color: #4444ff; }
         .debug-warning { color: #ffaa00; }
+        
+        /* How To Modal */
+        #howToModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            z-index: 10002;
+            align-items: center;
+            justify-content: center;
+        }
+        #howToModal.show {
+            display: flex;
+        }
+        .how-to-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .how-to-close {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        .how-to-close:hover {
+            color: #333;
+        }
     </style>
 </head>
 <body>
-    <!-- Debug Toggle Button -->
+    <!-- Debug and How To Toggle Buttons -->
     <button id="debugToggle" onclick="toggleDebug()">Show Debug</button>
+    <button id="howToToggle" onclick="toggleHowTo()">How To</button>
     
     <!-- Debug Console -->
     <div id="debugConsole">
         <div><strong>DEBUG CONSOLE</strong></div>
         <div id="debugLog"></div>
+    </div>
+
+    <!-- How To Modal -->
+    <div id="howToModal">
+        <div class="how-to-content">
+            <button class="how-to-close" onclick="toggleHowTo()">&times;</button>
+            <h2>🚰 Portland Water Meter Management System - How To Guide</h2>
+            <h3>Getting Started:</h3>
+            <ol>
+                <li><strong>View Meters:</strong> The map shows all 6,697+ water meters in Portland, TX</li>
+                <li><strong>Color Coding:</strong>
+                    <ul>
+                        <li>🔵 <strong>Blue dots</strong> = Meters that need account updates</li>
+                        <li>🟢 <strong>Green dots</strong> = Meters with completed account updates</li>
+                    </ul>
+                </li>
+                <li><strong>Select a Meter:</strong> Click any blue or green dot on the map</li>
+                <li><strong>View Details:</strong> Meter information will appear in the right panel</li>
+                <li><strong>Update Account:</strong> Enter new account information and click "Save Changes"</li>
+                <li><strong>Search:</strong> Use the search box to find specific addresses or account numbers</li>
+                <li><strong>Legend:</strong> Click the layer list icon in the top-right corner of the map</li>
+            </ol>
+            <h3>Tips:</h3>
+            <ul>
+                <li>Use the "Reset Map" button to return to the full city view</li>
+                <li>The statistics at the top show total meters and how many have been updated</li>
+                <li>All changes are saved automatically to the city database</li>
+            </ul>
+        </div>
     </div>
 
     <!-- Header -->
@@ -119,7 +191,26 @@
                 <h2 class="details-title">Meter Details</h2>
                 <button id="closeDetails" class="close-details">×</button>
             </div>
-            <div class="details-content" id="detailsContent"></div>
+            <div class="details-content" id="detailsContent">
+                <!-- Default Instructions -->
+                <div class="details-section instruction-section">
+                    <h3 class="section-title">👆 Getting Started</h3>
+                    <div class="instruction-content">
+                        <p><strong>Click on any meter</strong> (blue or green dot) on the map to view and edit its details.</p>
+                        <div class="legend-guide">
+                            <div class="legend-item">
+                                <span class="legend-dot blue-dot"></span>
+                                <span>Needs Account Update</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot green-dot"></span>
+                                <span>Account Updated</span>
+                            </div>
+                        </div>
+                        <p class="instruction-tip">💡 <strong>Tip:</strong> Use the search box to find specific addresses or account numbers.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -138,6 +229,12 @@
             debugVisible = !debugVisible;
             console.style.display = debugVisible ? 'block' : 'none';
             button.textContent = debugVisible ? 'Hide Debug' : 'Show Debug';
+        }
+
+        // How To toggle function
+        function toggleHowTo() {
+            const modal = document.getElementById('howToModal');
+            modal.classList.toggle('show');
         }
 
         // Debug logging function
