@@ -2,9 +2,9 @@
     /* Portland TX Brand Colors */
     --portland-blue: #2247fe;
     --portland-green: #80c940;
+    --portland-orange: #fb7f31; /* Main header color now */
     --portland-teal: #76d0ce;
     --portland-yellow: #ffc601;
-    --portland-orange: #fb7f31;
 
     /* Neutral Colors */
     --white: #ffffff;
@@ -26,16 +26,15 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-        Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     color: var(--dark-gray);
     line-height: 1.6;
 }
 
-/* Header Styles */
+/* Header Styles - CHANGED TO ORANGE */
 .app-header {
-    background: linear-gradient(135deg, var(--portland-blue) 0%, #1a3bcc 100%);
+    background: linear-gradient(135deg, var(--portland-orange) 0%, #e86b2a 100%);
     color: var(--white);
     padding: 1rem 0;
     box-shadow: var(--shadow-lg);
@@ -59,7 +58,7 @@ body {
     gap: 1.5rem;
 }
 
-/* Completely clean logo styling */
+/* Logo - WHITE filter for orange background */
 .city-logo-clean {
     height: 60px;
     width: auto;
@@ -69,7 +68,7 @@ body {
     box-shadow: none !important;
     padding: 0 !important;
     margin: 0 !important;
-    filter: none;
+    filter: brightness(0) invert(1); /* Makes logo white */
     transition: opacity 0.3s ease;
     display: block;
     object-fit: contain;
@@ -129,11 +128,11 @@ body {
 }
 
 .blue-icon {
-    background: rgba(34, 71, 254, 0.2);
+    background: rgba(34, 71, 254, 0.3);
 }
 
 .green-icon {
-    background: rgba(128, 201, 64, 0.2);
+    background: rgba(128, 201, 64, 0.3);
 }
 
 .stat-info {
@@ -427,11 +426,7 @@ body {
 }
 
 .detail-group.priority {
-    background: linear-gradient(
-        135deg,
-        rgba(34, 71, 254, 0.05) 0%,
-        rgba(34, 71, 254, 0.02) 100%
-    );
+    background: linear-gradient(135deg, rgba(34, 71, 254, 0.05) 0%, rgba(34, 71, 254, 0.02) 100%);
     padding: 1rem;
     border-radius: 8px;
     border-left: 4px solid var(--portland-blue);
@@ -528,11 +523,7 @@ body {
 }
 
 .edit-section {
-    background: linear-gradient(
-        135deg,
-        rgba(128, 201, 64, 0.05) 0%,
-        rgba(128, 201, 64, 0.02) 100%
-    );
+    background: linear-gradient(135deg, rgba(128, 201, 64, 0.05) 0%, rgba(128, 201, 64, 0.02) 100%);
     border-left: 4px solid var(--portland-green);
 }
 
@@ -560,19 +551,15 @@ body {
     width: 60px;
     height: 60px;
     border: 6px solid var(--border-gray);
-    border-top: 6px solid var(--portland-blue);
+    border-top: 6px solid var(--portland-orange);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-bottom: 1rem;
 }
 
 @keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .loading-text {
@@ -636,8 +623,7 @@ body {
         min-height: calc(100vh - 120px);
     }
 
-    .search-panel,
-    .details-panel {
+    .search-panel, .details-panel {
         width: 100%;
     }
 
@@ -675,8 +661,7 @@ body {
         padding: 1rem;
     }
 
-    .search-panel,
-    .details-panel {
+    .search-panel, .details-panel {
         padding: 1rem;
     }
 }
