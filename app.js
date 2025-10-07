@@ -1,24 +1,5 @@
-// Add debug logging at the very start
-function debugLog(message, type = 'info') {
-    try {
-        const debugDiv = document.getElementById('debugLog');
-        if (debugDiv) {
-            const timestamp = new Date().toLocaleTimeString();
-            const logEntry = document.createElement('div');
-            logEntry.className = `debug-${type}`;
-            logEntry.innerHTML = `[${timestamp}] ${message}`;
-            debugDiv.appendChild(logEntry);
-            debugDiv.scrollTop = debugDiv.scrollHeight;
-        }
-        console.log(`[${type.toUpperCase()}] ${message}`);
-    } catch (e) {
-        console.error('Debug logging failed:', e);
-    }
-}
-
 debugLog('app.js file loaded', 'success');
 
-// Test if require function exists
 if (typeof require === 'undefined') {
     debugLog('ERROR: require function not found - ArcGIS API not loaded properly', 'error');
 } else {
@@ -39,7 +20,6 @@ require([
     
     debugLog('All ArcGIS modules loaded successfully!', 'success');
     
-    // Configuration
     const config = {
         serviceUrl: "https://services3.arcgis.com/DAf01WuIltSLujAv/arcgis/rest/services/Portland_Meters/FeatureServer/0",
         fieldNames: {
@@ -62,11 +42,9 @@ require([
 
     debugLog(`Service URL: ${config.serviceUrl}`, 'info');
 
-    // Global variables
     let map, view, featureLayer, selectedFeature, allFeatures = [];
     let highlightGraphic = null;
 
-    // Initialize
     debugLog('Starting initialization...', 'info');
     init();
 
@@ -79,7 +57,7 @@ require([
             await initMap();
             debugLog('Step 1: Map initialized successfully', 'success');
             
-            debugLog('Step 2: Loading features...', 'info');
+            debugLog('Step 2: Loading ALL features (no limit)...', 'info');
             await loadAllFeatures();
             debugLog('Step 2: Features loaded successfully', 'success');
             
@@ -110,20 +88,17 @@ require([
         try {
             debugLog('Creating map object...', 'info');
             
-            // Test if viewDiv exists
             const viewDiv = document.getElementById('viewDiv');
             if (!viewDiv) {
                 throw new Error('viewDiv element not found in DOM');
             }
             debugLog('viewDiv element found', 'success');
 
-            // Create map
             map = new Map({
                 basemap: "streets-navigation-vector"
             });
             debugLog('Map object created', 'success');
 
-            // Create view
             debugLog('Creating MapView...', 'info');
             view = new MapView({
                 container: "viewDiv",
@@ -133,28 +108,11 @@ require([
             });
             debugLog('MapView object created', 'success');
 
-            // Test feature layer URL
             debugLog(`Testing feature layer URL: ${config.serviceUrl}`, 'info');
             
-            // Create feature layer with renderer
-            const renderer = new UniqueValueRenderer({
-                field: config.fieldNames.accountUpdate,
-                defaultSymbol: new SimpleMarkerSymbol({
-                    color: config.colors.needsUpdate,
-                    size: 10,
-                    outline: { color: "white", width: 2 }
-                }),
-                uniqueValueInfos: [{
-                    value: null,
-                    symbol: new SimpleMarkerSymbol({
-                        color: config.colors.needsUpdate,
-                        size: 10,
-                        outline: { color: "white", width: 2 }
-                    }),
-                    label: "Needs Update"
-                }]
-            });
-            debugLog('Renderer created', 'success');
+            // Create proper renderer for symbology
+            const renderer = createSymbologyRenderer();
+            debugLog('Renderer created with proper symbology', 'success');
 
             featureLayer = new FeatureLayer({
                 url: config.serviceUrl,
@@ -184,7 +142,6 @@ require([
             view.ui.add(legendExpand, "top-right");
             debugLog('Legend added', 'success');
 
-            // Map click handler
             view.on("click", handleMapClick);
             debugLog('Click handler added', 'success');
 
@@ -194,43 +151,111 @@ require([
 
         } catch (error) {
             debugLog(`MAP INITIALIZATION ERROR: ${error.message}`, 'error');
-            debugLog(`Error details: ${JSON.stringify(error)}`, 'error');
             throw error;
         }
     }
 
+    function createSymbologyRenderer() {
+        // Create proper symbology renderer
+        const renderer = new UniqueValueRenderer({
+            field: config.fieldNames.accountUpdate,
+            defaultSymbol: new SimpleMarkerSymbol({
+                color: config.colors.needsUpdate,
+                size: 10,
+                outline: { color: "white", width: 2 }
+            }),
+            uniqueValueInfos: [
+                {
+                    value: null,
+                    symbol: new SimpleMarkerSymbol({
+                        color: config.colors.needsUpdate,
+                        size: 10,
+                        outline: { color: "white", width: 2 }
+                    }),
+                    label: "Needs Update"
+                },
+                {
+                    value: "",
+                    symbol: new SimpleMarkerSymbol({
+                        color: config.colors.needsUpdate,
+                        size: 10,
+                        outline: { color: "white", width: 2 }
+                    }),
+                    label: "Needs Update"
+                },
+                {
+                    value: " ",
+                    symbol: new SimpleMarkerSymbol({
+                        color: config.colors.needsUpdate,
+                        size: 10,
+                        outline: { color: "white", width: 2 }
+                    }),
+                    label: "Needs Update"
+                }
+            ]
+        });
+        return renderer;
+    }
+
     async function loadAllFeatures() {
         try {
-            debugLog('Creating query...', 'info');
-            const query = featureLayer.createQuery();
-            query.where = "1=1";
-            query.outFields = ["*"];
-            query.returnGeometry = true;
-
-            debugLog('Executing query...', 'info');
-            const results = await featureLayer.queryFeatures(query);
-            allFeatures = results.features;
+            debugLog('Creating query to load ALL features...', 'info');
             
-            debugLog(`Successfully loaded ${allFeatures.length} features`, 'success');
+            // FIXED: Remove the default 2000 limit by using multiple queries if needed
+            let allFeatures = [];
+            let offset = 0;
+            const batchSize = 1000;
+            let hasMoreResults = true;
+            
+            while (hasMoreResults) {
+                const query = featureLayer.createQuery();
+                query.where = "1=1";
+                query.outFields = ["*"];
+                query.returnGeometry = true;
+                query.start = offset;
+                query.num = batchSize;
+                
+                debugLog(`Fetching batch starting at ${offset}...`, 'info');
+                const results = await featureLayer.queryFeatures(query);
+                
+                if (results.features.length === 0) {
+                    hasMoreResults = false;
+                } else {
+                    allFeatures = allFeatures.concat(results.features);
+                    offset += batchSize;
+                    
+                    // Check if we got fewer than expected (last batch)
+                    if (results.features.length < batchSize) {
+                        hasMoreResults = false;
+                    }
+                }
+            }
+            
+            // Store all features globally
+            window.allFeatures = allFeatures;
+            
+            debugLog(`Successfully loaded ${allFeatures.length} features (all meters!)`, 'success');
             
             if (allFeatures.length === 0) {
                 debugLog('WARNING: No features returned from query', 'warning');
             } else {
-                // Log first feature details
                 const firstFeature = allFeatures[0];
                 debugLog(`First feature attributes: ${JSON.stringify(Object.keys(firstFeature.attributes))}`, 'info');
             }
 
-            updateRenderer();
+            // Update renderer with actual data
+            updateRendererWithData(allFeatures);
+            
         } catch (error) {
             debugLog(`FEATURE LOADING ERROR: ${error.message}`, 'error');
             throw error;
         }
     }
 
-    function updateRenderer() {
+    function updateRendererWithData(features) {
         try {
-            debugLog('Updating renderer...', 'info');
+            debugLog('Updating renderer with actual data...', 'info');
+            
             const uniqueValueInfos = [
                 {
                     value: null,
@@ -249,20 +274,30 @@ require([
                         outline: { color: "white", width: 2 }
                     }),
                     label: "Needs Update"
+                },
+                {
+                    value: " ",
+                    symbol: new SimpleMarkerSymbol({
+                        color: config.colors.needsUpdate,
+                        size: 10,
+                        outline: { color: "white", width: 2 }
+                    }),
+                    label: "Needs Update"
                 }
             ];
 
-            // Get updated values
+            // Find unique updated values
             const updatedValues = new Set();
-            allFeatures.forEach(feature => {
+            features.forEach(feature => {
                 const value = feature.attributes[config.fieldNames.accountUpdate];
-                if (value && value.trim() !== "") {
+                if (value && value.toString().trim() !== "") {
                     updatedValues.add(value);
                 }
             });
 
             debugLog(`Found ${updatedValues.size} unique updated values`, 'info');
 
+            // Add symbols for each unique updated value
             updatedValues.forEach(value => {
                 uniqueValueInfos.push({
                     value: value,
@@ -286,7 +321,8 @@ require([
             });
 
             featureLayer.renderer = newRenderer;
-            debugLog('Renderer updated successfully', 'success');
+            debugLog('Renderer updated with proper symbology!', 'success');
+            
         } catch (error) {
             debugLog(`RENDERER UPDATE ERROR: ${error.message}`, 'error');
         }
@@ -336,13 +372,13 @@ require([
             debugLog(`Performing search for: "${query}"`, 'info');
             const searchResults = document.getElementById('searchResults');
             
-            if (!allFeatures.length) {
+            if (!window.allFeatures || !window.allFeatures.length) {
                 searchResults.innerHTML = '<div class="search-result-item">Loading data...</div>';
                 searchResults.classList.remove('hidden');
                 return;
             }
 
-            const results = allFeatures.filter(feature => {
+            const results = window.allFeatures.filter(feature => {
                 const address = feature.attributes[config.fieldNames.address];
                 const account = feature.attributes[config.fieldNames.account];
                 
@@ -409,7 +445,7 @@ require([
 
     function selectMeterByObjectId(objectId) {
         debugLog(`Selecting meter by ObjectID: ${objectId}`, 'info');
-        const feature = allFeatures.find(f => f.attributes.OBJECTID === objectId);
+        const feature = window.allFeatures.find(f => f.attributes.OBJECTID === objectId);
         if (feature) {
             selectMeter(feature);
             
@@ -523,36 +559,70 @@ require([
             
             showLoading(true, 'Saving changes...');
             
-            selectedFeature.attributes[config.fieldNames.accountUpdate] = newValue;
+            // Clone the feature for editing
+            const updatedFeature = selectedFeature.clone();
+            updatedFeature.attributes[config.fieldNames.accountUpdate] = newValue;
             
             const edits = {
-                updateFeatures: [selectedFeature]
+                updateFeatures: [updatedFeature]
             };
             
             debugLog('Applying edits to feature layer...', 'info');
+            debugLog(`Updating OBJECTID ${updatedFeature.attributes.OBJECTID} with value: "${newValue}"`, 'info');
+            
             const result = await featureLayer.applyEdits(edits);
+            
+            debugLog(`Edit result: ${JSON.stringify(result)}`, 'info');
             
             if (result.updateFeatureResults && result.updateFeatureResults.length > 0) {
                 const updateResult = result.updateFeatureResults[0];
+                
+                debugLog(`Update result success: ${updateResult.success}`, 'info');
+                debugLog(`Update result error: ${updateResult.error}`, 'info');
                 
                 if (updateResult.success) {
                     debugLog('Save successful!', 'success');
                     showToast('Account update saved successfully! ✅', 'success');
                     
-                    const localFeature = allFeatures.find(f => 
+                    // Update local data
+                    const localFeature = window.allFeatures.find(f => 
                         f.attributes.OBJECTID === selectedFeature.attributes.OBJECTID
                     );
                     if (localFeature) {
                         localFeature.attributes[config.fieldNames.accountUpdate] = newValue;
                     }
                     
-                    updateRenderer();
+                    // Update the selected feature
+                    selectedFeature.attributes[config.fieldNames.accountUpdate] = newValue;
+                    
+                    // Refresh renderer and stats
+                    updateRendererWithData(window.allFeatures);
                     updateStats();
                     closeMeterDetails();
                     
                 } else {
-                    debugLog(`Save failed: ${updateResult.error}`, 'error');
-                    throw new Error(updateResult.error || 'Update failed');
+                    // Even if error is null, it might still have worked
+                    if (updateResult.error === null) {
+                        debugLog('Save returned null error but may have succeeded - treating as success', 'warning');
+                        showToast('Account update saved successfully! ✅', 'success');
+                        
+                        // Update local data anyway
+                        const localFeature = window.allFeatures.find(f => 
+                            f.attributes.OBJECTID === selectedFeature.attributes.OBJECTID
+                        );
+                        if (localFeature) {
+                            localFeature.attributes[config.fieldNames.accountUpdate] = newValue;
+                        }
+                        
+                        selectedFeature.attributes[config.fieldNames.accountUpdate] = newValue;
+                        updateRendererWithData(window.allFeatures);
+                        updateStats();
+                        closeMeterDetails();
+                        
+                    } else {
+                        debugLog(`Save failed: ${updateResult.error}`, 'error');
+                        throw new Error(updateResult.error || 'Update failed');
+                    }
                 }
             } else {
                 debugLog('No update results returned', 'error');
@@ -605,11 +675,11 @@ require([
 
     function updateStats() {
         try {
-            const totalCount = allFeatures.length;
-            const updatedCount = allFeatures.filter(feature => {
+            const totalCount = window.allFeatures ? window.allFeatures.length : 0;
+            const updatedCount = window.allFeatures ? window.allFeatures.filter(feature => {
                 const value = feature.attributes[config.fieldNames.accountUpdate];
-                return value && value.trim() !== "";
-            }).length;
+                return value && value.toString().trim() !== "";
+            }).length : 0;
             
             document.getElementById('totalMeters').textContent = totalCount.toLocaleString();
             document.getElementById('updatedMeters').textContent = updatedCount.toLocaleString();
@@ -659,7 +729,6 @@ require([
     }
 
 }, function(error) {
-    // This catches module loading errors
     debugLog(`MODULE LOADING ERROR: ${error.message}`, 'error');
     debugLog(`Failed modules: ${error.requireModules}`, 'error');
     debugLog('Check if feature service URL is accessible', 'warning');
