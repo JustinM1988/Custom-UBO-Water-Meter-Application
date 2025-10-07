@@ -34,9 +34,9 @@ require([
             type: "Type"
         },
         colors: {
-            needsUpdate: "#2247fe", // blue
-            updated: "#80c940",     // green
-            selected: "#fb7f31"     // orange
+            needsUpdate: "#2247fe",
+            updated: "#80c940",
+            selected: "#fb7f31"
         }
     };
 
@@ -86,14 +86,22 @@ require([
 
             map.add(featureLayer);
 
-            const legend = new Legend({ view: view, style: { type: "card", layout: "side-by-side" } });
+            // FIXED: Re-add legend
+            const legend = new Legend({ 
+                view: view, 
+                style: { type: "card", layout: "side-by-side" },
+                respectLayerVisibility: true
+            });
             const legendExpand = new Expand({
                 view: view,
                 content: legend,
                 expanded: false,
-                expandIconClass: "esri-icon-layer-list"
+                expandIconClass: "esri-icon-layer-list",
+                expandTooltip: "Show Legend"
             });
             view.ui.add(legendExpand, "top-right");
+            debugLog('Legend added successfully', 'success');
+
             view.on("click", handleMapClick);
             await view.when();
         } catch (error) {
@@ -108,13 +116,13 @@ require([
             field: config.fieldNames.accountUpdate,
             defaultSymbol: new SimpleMarkerSymbol({
                 color: config.colors.needsUpdate,
-                size: 10,
-                outline: { color: "white", width: 2 }
+                size: 8,
+                outline: { color: "white", width: 1.5 }
             }),
             uniqueValueInfos: [
-                { value: null, symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 10, outline: { color: "white", width: 2 } }), label: "Needs Update" },
-                { value: "",   symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 10, outline: { color: "white", width: 2 } }), label: "Needs Update" },
-                { value: " ",  symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 10, outline: { color: "white", width: 2 } }), label: "Needs Update" }
+                { value: null, symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 8, outline: { color: "white", width: 1.5 } }), label: "Needs Update" },
+                { value: "",   symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 8, outline: { color: "white", width: 1.5 } }), label: "Needs Update" },
+                { value: " ",  symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 8, outline: { color: "white", width: 1.5 } }), label: "Needs Update" }
             ]
         });
     }
@@ -143,9 +151,9 @@ require([
     function updateRendererWithData(features) {
         debugLog('Updating renderer with blue/green symbology based on Account_Update...', 'info');
         const uniqueValueInfos = [
-            { value: null, symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 10, outline: { color: "white", width: 2 } }), label: "Needs Update" },
-            { value: "",   symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 10, outline: { color: "white", width: 2 } }), label: "Needs Update" },
-            { value: " ",  symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 10, outline: { color: "white", width: 2 } }), label: "Needs Update" }
+            { value: null, symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 8, outline: { color: "white", width: 1.5 } }), label: "Needs Update" },
+            { value: "",   symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 8, outline: { color: "white", width: 1.5 } }), label: "Needs Update" },
+            { value: " ",  symbol: new SimpleMarkerSymbol({ color: config.colors.needsUpdate, size: 8, outline: { color: "white", width: 1.5 } }), label: "Needs Update" }
         ];
         const updatedValues = new Set();
         features.forEach(f => {
@@ -157,8 +165,8 @@ require([
                 value: value,
                 symbol: new SimpleMarkerSymbol({
                     color: config.colors.updated,
-                    size: 10,
-                    outline: { color: "white", width: 2 }
+                    size: 8,
+                    outline: { color: "white", width: 1.5 }
                 }),
                 label: "Updated"
             });
@@ -167,8 +175,8 @@ require([
             field: config.fieldNames.accountUpdate,
             defaultSymbol: new SimpleMarkerSymbol({
                 color: config.colors.needsUpdate,
-                size: 10,
-                outline: { color: "white", width: 2 }
+                size: 8,
+                outline: { color: "white", width: 1.5 }
             }),
             uniqueValueInfos: uniqueValueInfos
         });
@@ -215,7 +223,7 @@ require([
                 (address && address.toLowerCase().includes(query.toLowerCase())) ||
                 (account && account.toLowerCase().includes(query.toLowerCase()))
             );
-        }).slice(0, 10);
+        }).slice(0, 8); // Fewer results for smaller panel
         if (results.length === 0) {
             searchResults.innerHTML = '<div class="search-result-item no-results">No meters found</div>';
         } else {
@@ -226,7 +234,7 @@ require([
                 return `
                     <div class="search-result-item" data-objectid="${feature.attributes.OBJECTID}">
                         <div class="result-main">${address}</div>
-                        <div class="result-sub">Account: ${account} | Customer: ${customer}</div>
+                        <div class="result-sub">Account: ${account}</div>
                     </div>
                 `;
             }).join('');
@@ -262,7 +270,7 @@ require([
         const feature = window.allFeatures.find(f => f.attributes.OBJECTID === objectId);
         if (feature) {
             selectMeter(feature);
-            view.goTo({ target: feature.geometry, zoom: 18 });
+            view.goTo({ target: feature.geometry, zoom: 17 });
         } else {
             debugLog(`Feature with ObjectID ${objectId} not found`, 'warning');
         }
@@ -276,8 +284,8 @@ require([
             geometry: feature.geometry,
             symbol: new SimpleMarkerSymbol({
                 color: config.colors.selected,
-                size: 16,
-                outline: { color: "white", width: 3 }
+                size: 14,
+                outline: { color: "white", width: 2.5 }
             })
         });
         view.graphics.add(highlightGraphic);
@@ -329,7 +337,7 @@ require([
                                placeholder="Enter account update information">
                     </div>
                     <div class="edit-actions">
-                        <button id="saveChanges" class="btn btn-primary">💾 Save Changes</button>
+                        <button id="saveChanges" class="btn btn-primary">💾 Save</button>
                         <button id="cancelEdit" class="btn btn-secondary">❌ Cancel</button>
                     </div>
                 </div>
@@ -343,29 +351,43 @@ require([
     }
 
     async function saveAccountUpdate() {
+        // FIXED: Don't freeze on save
+        const saveBtn = document.getElementById('saveChanges');
+        const input = document.getElementById('accountUpdateInput');
+        
+        if (!selectedFeature || !saveBtn || !input) return;
+        
         try {
-            if (!selectedFeature) return;
             debugLog('Saving account update...', 'info');
-            const input = document.getElementById('accountUpdateInput');
             const newValue = input.value.trim();
-            showLoading(true, 'Saving changes...');
+            
+            // Disable button to prevent double-clicks
+            saveBtn.disabled = true;
+            saveBtn.textContent = '💾 Saving...';
+            
             // Clone the feature for editing
             const updatedFeature = selectedFeature.clone();
             updatedFeature.attributes[config.fieldNames.accountUpdate] = newValue;
-            const edits = {
-                updateFeatures: [updatedFeature]
-            };
+            
+            const edits = { updateFeatures: [updatedFeature] };
+            
             debugLog('Applying edits to feature layer...', 'info');
             debugLog(`Updating OBJECTID ${updatedFeature.attributes.OBJECTID} with value: "${newValue}"`, 'info');
+            
             const result = await featureLayer.applyEdits(edits);
             debugLog(`Edit result: ${JSON.stringify(result)}`, 'info');
+            
             if (result.updateFeatureResults && result.updateFeatureResults.length > 0) {
                 const updateResult = result.updateFeatureResults[0];
                 debugLog(`Update result success: ${updateResult.success}`, 'info');
                 debugLog(`Update result error: ${updateResult.error}`, 'info');
-                if (updateResult.success) {
+                
+                // Success or null error (which still works)
+                if (updateResult.success || updateResult.error === null) {
                     debugLog('Save successful!', 'success');
                     showToast('Account update saved successfully! ✅', 'success');
+                    
+                    // Update local data
                     const localFeature = window.allFeatures.find(f =>
                         f.attributes.OBJECTID === selectedFeature.attributes.OBJECTID
                     );
@@ -373,43 +395,60 @@ require([
                         localFeature.attributes[config.fieldNames.accountUpdate] = newValue;
                     }
                     selectedFeature.attributes[config.fieldNames.accountUpdate] = newValue;
+                    
+                    // Update renderer and stats
                     updateRendererWithData(window.allFeatures);
                     updateStats();
-                    closeMeterDetails();
+                    
+                    // FIXED: Don't close panel, just reset button
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = '💾 Save';
+                    
                 } else {
-                    if (updateResult.error === null) {
-                        debugLog('Save returned null error but may have succeeded - treating as success', 'warning');
-                        showToast('Account update saved successfully! ✅', 'success');
-                        const localFeature = window.allFeatures.find(f =>
-                            f.attributes.OBJECTID === selectedFeature.attributes.OBJECTID
-                        );
-                        if (localFeature) {
-                            localFeature.attributes[config.fieldNames.accountUpdate] = newValue;
-                        }
-                        selectedFeature.attributes[config.fieldNames.accountUpdate] = newValue;
-                        updateRendererWithData(window.allFeatures);
-                        updateStats();
-                        closeMeterDetails();
-                    } else {
-                        debugLog(`Save failed: ${updateResult.error}`, 'error');
-                        throw new Error(updateResult.error || 'Update failed');
-                    }
+                    throw new Error(updateResult.error || 'Update failed');
                 }
             } else {
-                debugLog('No update results returned', 'error');
                 throw new Error('No update results returned');
             }
+            
         } catch (error) {
             debugLog(`SAVE ERROR: ${error.message}`, 'error');
             showToast('Failed to save changes. Please try again. ❌', 'error');
-        } finally {
-            showLoading(false);
+            
+            // Re-enable button
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = '💾 Save';
+            }
         }
     }
 
     function closeMeterDetails() {
         debugLog('Closing meter details', 'info');
         const panel = document.getElementById('detailsPanel');
+        const content = document.getElementById('detailsContent');
+        
+        // Show instructions again
+        content.innerHTML = `
+            <div class="details-section instruction-section">
+                <h3 class="section-title">👆 Getting Started</h3>
+                <div class="instruction-content">
+                    <p><strong>Click on any meter</strong> (blue or green dot) on the map to view and edit its details.</p>
+                    <div class="legend-guide">
+                        <div class="legend-item">
+                            <span class="legend-dot blue-dot"></span>
+                            <span>Needs Account Update</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot green-dot"></span>
+                            <span>Account Updated</span>
+                        </div>
+                    </div>
+                    <p class="instruction-tip">💡 <strong>Tip:</strong> Use the search box to find specific addresses or account numbers.</p>
+                </div>
+            </div>
+        `;
+        
         panel.classList.remove('visible');
         if (highlightGraphic) view.graphics.remove(highlightGraphic);
         highlightGraphic = null;
@@ -464,7 +503,7 @@ require([
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => document.body.removeChild(toast), 300);
-        }, 4000);
+        }, 3000); // Shorter display time
     }
 
 }, function(error) {
