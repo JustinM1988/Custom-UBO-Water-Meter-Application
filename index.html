@@ -3,11 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portland Water Meter Management System</title>
+    <title>Portland Water Meter Management System - DEBUG</title>
     <link rel="stylesheet" href="https://js.arcgis.com/4.28/esri/themes/light/main.css">
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Debug console overlay */
+        #debugConsole {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 400px;
+            max-height: 300px;
+            background: rgba(0,0,0,0.9);
+            color: #00ff00;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-y: auto;
+            z-index: 10000;
+            border: 2px solid #00ff00;
+        }
+        .debug-error { color: #ff4444; }
+        .debug-success { color: #44ff44; }
+        .debug-info { color: #4444ff; }
+        .debug-warning { color: #ffaa00; }
+    </style>
 </head>
 <body>
+    <!-- Debug Console -->
+    <div id="debugConsole">
+        <div><strong>DEBUG CONSOLE</strong></div>
+        <div id="debugLog"></div>
+    </div>
+
     <!-- Header -->
     <header class="app-header">
         <div class="header-container">
@@ -17,7 +46,7 @@
                      class="city-logo-clean">
                 <div class="header-text">
                     <h1 class="app-title">Portland Water Meter Management System</h1>
-                    <p class="app-subtitle">Municipal Utility Account Updates</p>
+                    <p class="app-subtitle">Municipal Utility Account Updates - DEBUG MODE</p>
                 </div>
             </div>
             <div class="header-stats">
@@ -50,7 +79,7 @@
                            placeholder="Search by address or account number..." 
                            autocomplete="off" 
                            class="search-input">
-                    <button id="clearSearch" class="clear-search" aria-label="Clear search">×</button>
+                    <button id="clearSearch" class="clear-search">×</button>
                 </div>
                 <div id="searchResults" class="search-results hidden"></div>
             </div>
@@ -68,7 +97,7 @@
         <div class="details-panel" id="detailsPanel">
             <div class="details-header">
                 <h2 class="details-title">Meter Details</h2>
-                <button id="closeDetails" class="close-details" aria-label="Close details">×</button>
+                <button id="closeDetails" class="close-details">×</button>
             </div>
             <div class="details-content" id="detailsContent"></div>
         </div>
@@ -80,8 +109,36 @@
         <div class="loading-text">Loading...</div>
     </div>
 
-    <!-- Scripts -->
+    <script>
+        // Debug logging function
+        function debugLog(message, type = 'info') {
+            const debugDiv = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `debug-${type}`;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            debugDiv.appendChild(logEntry);
+            debugDiv.scrollTop = debugDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // Test basic functionality first
+        debugLog('Starting application...', 'info');
+        debugLog('DOM loaded successfully', 'success');
+        
+        // Test if ArcGIS JS API loads
+        debugLog('Loading ArcGIS JavaScript API...', 'info');
+    </script>
+    
     <script src="https://js.arcgis.com/4.28/"></script>
+    <script>
+        // Check if ArcGIS loaded
+        if (typeof require === 'function') {
+            debugLog('ArcGIS JavaScript API loaded successfully!', 'success');
+        } else {
+            debugLog('ERROR: ArcGIS JavaScript API failed to load!', 'error');
+        }
+    </script>
     <script src="app.js"></script>
 </body>
 </html>
